@@ -7,15 +7,11 @@ class SudokuGame {
     private var board: Array<IntArray> = Array(9) { IntArray(9) }
     private var solution: Array<IntArray> = Array(9) { IntArray(9) }
 
-    init {
-        generateNewGame()
-    }
-
     fun getBoard(): Array<IntArray> {
         return board
     }
 
-    fun generateNewGame() {
+    fun generateNewGame(difficulty: String) {
         // Start with an empty board
         board = Array(9) { IntArray(9) }
         solution = Array(9) { IntArray(9) }
@@ -26,17 +22,23 @@ class SudokuGame {
             solution[i] = board[i].clone()
         }
 
+        // Determine the number of cells to remove based on difficulty
+        val cellsToRemove = when (difficulty) {
+            "Easy" -> 35
+            "Medium" -> 45
+            "Hard" -> 50
+            "Expert" -> 55
+            else -> 45 // Default to Medium
+        }
 
-        // Remove numbers to create the puzzle
-        // The number of cells to remove (e.g., 45 for a medium puzzle)
-        var cellsToRemove = 45
-        while (cellsToRemove > 0) {
+        var cellsRemoved = 0
+        while (cellsRemoved < cellsToRemove) {
             val row = Random.nextInt(9)
             val col = Random.nextInt(9)
 
             if (board[row][col] != 0) {
                 board[row][col] = 0
-                cellsToRemove--
+                cellsRemoved++
             }
         }
     }

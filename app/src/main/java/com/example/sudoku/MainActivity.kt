@@ -41,12 +41,14 @@ class MainActivity : AppCompatActivity() {
         checkSolutionButton = findViewById(R.id.checkSolutionButton)
         messageTextView = findViewById(R.id.messageTextView)
 
+        val difficulty = intent.getStringExtra("DIFFICULTY") ?: "Medium"
+
         sudokuGame = SudokuGame()
         setupSudokuGrid()
-        startNewGame()
+        startNewGame(difficulty)
 
         newGameButton.setOnClickListener {
-            startNewGame()
+            finish() // Go back to the StartMenuActivity
         }
 
         checkSolutionButton.setOnClickListener {
@@ -104,8 +106,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startNewGame() {
-        sudokuGame.generateNewGame()
+    private fun startNewGame(difficulty: String) {
+        sudokuGame.generateNewGame(difficulty)
         val board = sudokuGame.getBoard()
         messageTextView.text = ""
 
