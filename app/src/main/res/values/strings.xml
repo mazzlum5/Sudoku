@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Sudoku</string>
+    <string name="difficulty_selection_title">Välj svårighetsgrad</string>
+    <string name="difficulty_easy">Lätt</string>
+    <string name="difficulty_medium">Medel</string>
+    <string name="difficulty_hard">Svår</string>
+    <string name="difficulty_expert">Expert</string>
+    <string name="congratulations_message">Grattis! Du klarade det på %1$s</string>
+    <string name="keep_trying">Fortsätt försöka!</string>
+    <string name="best_time">Bästa: %1$s</string>
+    <string name="best_time_default">Bästa: --:--</string>
+    <string name="hint_not_available">Ledtråd inte tillgänglig för tillfället. Försök igen om en stund.</string>
+    <string name="new_game">Nytt spel</string>
+    <string name="hint">Ledtråd</string>
+    <string name="check_solution">Kontrollera lösning</string>
 </resources>

@@ -5,7 +5,31 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/black"
     tools:context=".MainActivity">
+
+    <Chronometer
+        android:id="@+id/timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="24sp"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/sudokuGrid"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/bestTimeTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/best_time_default"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp" />
 
     <GridLayout
         android:id="@+id/sudokuGrid"
@@ -13,30 +37,41 @@
         android:layout_height="wrap_content"
         android:columnCount="9"
         android:rowCount="9"
-        android:background="@android:color/black"
+        android:background="@android:color/darker_gray"
         app:layout_constraintBottom_toTopOf="@+id/newGameButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/timer" />
 
     <Button
         android:id="@+id/newGameButton"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="New Game"
+        android:text="@string/new_game"
+        app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/checkSolutionButton"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/hintButton"
+        app:layout_constraintTop_toBottomOf="@+id/sudokuGrid" />
+
+    <Button
+        android:id="@+id/hintButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/hint"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/newGameButton"
+        app:layout_constraintEnd_toStartOf="@+id/checkSolutionButton"
         app:layout_constraintTop_toBottomOf="@+id/sudokuGrid" />
 
     <Button
         android:id="@+id/checkSolutionButton"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Check Solution"
+        android:text="@string/check_solution"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/newGameButton"
+        app:layout_constraintStart_toEndOf="@+id/hintButton"
         app:layout_constraintTop_toBottomOf="@+id/sudokuGrid" />
 
     <TextView
@@ -44,6 +79,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="18sp"
+        android:textColor="@android:color/white"
         android:layout_marginTop="16dp"
         app:layout_constraintTop_toBottomOf="@+id/newGameButton"
         app:layout_constraintStart_toStartOf="parent"
