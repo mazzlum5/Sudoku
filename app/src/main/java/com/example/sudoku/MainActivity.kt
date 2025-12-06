@@ -1,5 +1,6 @@
 package com.example.sudoku
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.os.SystemClock
@@ -27,8 +28,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var newGameButton: Button
     private lateinit var checkSolutionButton: Button
     private lateinit var messageTextView: TextView
+    private lateinit var bestTimeTextView: TextView
     private lateinit var timer: Chronometer
     private var timerShouldStart = false
+    private lateinit var difficulty: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,9 +47,10 @@ class MainActivity : AppCompatActivity() {
         newGameButton = findViewById(R.id.newGameButton)
         checkSolutionButton = findViewById(R.id.checkSolutionButton)
         messageTextView = findViewById(R.id.messageTextView)
+        bestTimeTextView = findViewById(R.id.bestTimeTextView)
         timer = findViewById(R.id.timer)
 
-        val difficulty = intent.getStringExtra("DIFFICULTY") ?: "Medium"
+        difficulty = intent.getStringExtra("DIFFICULTY") ?: "Medium"
 
         sudokuGame = SudokuGame()
         setupSudokuGrid()
@@ -59,8 +63,13 @@ class MainActivity : AppCompatActivity() {
         checkSolutionButton.setOnClickListener {
             if (sudokuGame.checkSolution()) {
                 timer.stop()
-                messageTextView.text = "Congratulations! You solved it in ${timer.text}"
+                val elapsedMillis = SystemClock.elapsedRealtime() - timer.base
+                val elapsedSeconds = elapsedMillis / 1000
+
+                messageTextView.text = "Congratulations! You solved it in ${formatTime(elapsedSeconds)}"
                 messageTextView.setTextColor(Color.GREEN)
+
+                updateBestTime(elapsedSeconds)
             } else {
                 messageTextView.text = "Keep trying!"
                 messageTextView.setTextColor(Color.RED)
@@ -125,6 +134,7 @@ class MainActivity : AppCompatActivity() {
         sudokuGame.generateNewGame(difficulty)
         val board = sudokuGame.getBoard()
         messageTextView.text = ""
+        loadBestTime()
 
         for (row in 0 until 9) {
             for (col in 0 until 9) {
@@ -165,5 +175,34 @@ class MainActivity : AppCompatActivity() {
                  messageTextView.text = ""
             }
         })
+    }
+    
+    private fun loadBestTime() {
+        val sharedPref = getSharedPreferences("SudokuPrefs", Context.MODE_PRIVATE)
+        val bestTime = sharedPref.getLong("bestTime_$difficulty", -1)
+        if (bestTime != -1L) {
+            bestTimeTextView.text = "Best: ${formatTime(bestTime)}"
+        } else {
+            bestTimeTextView.text = "Best: --:--"
+        }
+    }
+
+    private fun updateBestTime(newTime: Long) {
+        val sharedPref = getSharedPreferences("SudokuPrefs", Context.MODE_PRIVATE)
+        val bestTime = sharedPref.getLong("bestTime_$difficulty", -1)
+
+        if (bestTime == -1L || newTime < bestTime) {
+            with(sharedPref.edit()) {
+                putLong("bestTime_$difficulty", newTime)
+                apply()
+            }
+            loadBestTime()
+        }
+    }
+
+    private fun formatTime(timeInSeconds: Long): String {
+        val minutes = timeInSeconds / 60
+        val seconds = timeInSeconds % 60
+        return String.format("%02d:%02d", minutes, seconds)
     }
 }
