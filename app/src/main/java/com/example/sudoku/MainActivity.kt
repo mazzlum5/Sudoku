@@ -1,6 +1,5 @@
 package com.example.sudoku
 
-import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.os.SystemClock
@@ -18,7 +17,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.ads.AdError
@@ -26,9 +26,9 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.OnUserEarnedRewardListener
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -45,6 +45,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var difficulty: String
     private var rewardedAd: RewardedAd? = null
     private val adUnitId = "ca-app-pub-3940256099942544/5224354917" // Test Ad ID
+
+    companion object {
+        private const val TAG = "MainActivity"
+        const val EXTRA_DIFFICULTY = "DIFFICULTY"
+        private const val DEFAULT_DIFFICULTY = "Medium"
+        private const val PREFS_NAME = "SudokuPrefs"
+        private const val PREFS_KEY_BEST_TIME_PREFIX = "bestTime_"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         bestTimeTextView = findViewById(R.id.bestTimeTextView)
         timer = findViewById(R.id.timer)
 
-        difficulty = intent.getStringExtra("DIFFICULTY") ?: "Medium"
+        difficulty = intent.getStringExtra(EXTRA_DIFFICULTY) ?: DEFAULT_DIFFICULTY
 
         sudokuGame = SudokuGame()
         setupSudokuGrid()
@@ -87,12 +95,12 @@ class MainActivity : AppCompatActivity() {
                 val elapsedMillis = SystemClock.elapsedRealtime() - timer.base
                 val elapsedSeconds = elapsedMillis / 1000
 
-                messageTextView.text = "Congratulations! You solved it in ${formatTime(elapsedSeconds)}"
+                messageTextView.text = getString(R.string.congratulations_message, formatTime(elapsedSeconds))
                 messageTextView.setTextColor(Color.GREEN)
 
                 updateBestTime(elapsedSeconds)
             } else {
-                messageTextView.text = "Keep trying!"
+                messageTextView.text = getString(R.string.keep_trying)
                 messageTextView.setTextColor(Color.RED)
             }
         }
@@ -102,12 +110,12 @@ class MainActivity : AppCompatActivity() {
         val adRequest = AdRequest.Builder().build()
         RewardedAd.load(this, adUnitId, adRequest, object : RewardedAdLoadCallback() {
             override fun onAdFailedToLoad(adError: LoadAdError) {
-                Log.d("MainActivity", adError.message)
+                Log.d(TAG, adError.toString())
                 rewardedAd = null
             }
 
             override fun onAdLoaded(ad: RewardedAd) {
-                Log.d("MainActivity", "Ad was loaded.")
+                Log.d(TAG, "Ad was loaded.")
                 rewardedAd = ad
             }
         })
@@ -117,34 +125,34 @@ class MainActivity : AppCompatActivity() {
         if (rewardedAd != null) {
             rewardedAd?.fullScreenContentCallback = object: FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
-                    Log.d("MainActivity", "Ad was dismissed.")
+                    Log.d(TAG, "Ad was dismissed.")
                     // Load the next ad
                     loadRewardedAd()
                 }
 
                 override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                    Log.d("MainActivity", "Ad failed to show.")
+                    Log.d(TAG, "Ad failed to show.")
                 }
 
                 override fun onAdShowedFullScreenContent() {
-                    Log.d("MainActivity", "Ad showed fullscreen content.")
+                    Log.d(TAG, "Ad showed fullscreen content.")
                     // Called when ad is dismissed.
                     rewardedAd = null
                 }
             }
 
-            rewardedAd?.show(this, OnUserEarnedRewardListener {
-                Log.d("MainActivity", "User earned the reward.")
+            rewardedAd?.show(this) {
+                Log.d(TAG, "User earned the reward.")
                 val hint = sudokuGame.getHint()
                 if (hint != null) {
                     val (row, col, number) = hint
                     val cell = cells[row][col]
                     cell?.setText(number.toString())
                 }
-            })
+            }
         } else {
-            Log.d("MainActivity", "The rewarded ad wasn't ready yet.")
-            Toast.makeText(this, "Ledtråd inte tillgänglig för tillfället. Försök igen om en stund.", Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "The rewarded ad wasn\'t ready yet.")
+            Toast.makeText(this, getString(R.string.hint_not_available), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -158,7 +166,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSudokuGrid() {
         val size = 9
-        cells = Array(size) { arrayOfNulls<EditText>(size) }
+        cells = Array(size) { arrayOfNulls(size) }
         val displayMetrics = resources.displayMetrics
         val cellSideInDp = 40
         val cellSideInPixels = (cellSideInDp * displayMetrics.density).toInt()
@@ -189,9 +197,9 @@ class MainActivity : AppCompatActivity() {
                 editText.setTextColor(Color.WHITE)
 
                 if ((row / 3 + col / 3) % 2 == 0) {
-                    editText.setBackgroundColor(Color.parseColor("#333333"))
+                    editText.setBackgroundColor("#333333".toColorInt())
                 } else {
-                    editText.setBackgroundColor(Color.parseColor("#222222"))
+                    editText.setBackgroundColor("#222222".toColorInt())
                 }
 
                 sudokuGrid.addView(editText)
@@ -204,7 +212,7 @@ class MainActivity : AppCompatActivity() {
     private fun startNewGame(difficulty: String) {
         sudokuGame.generateNewGame(difficulty)
         val board = sudokuGame.getBoard()
-        messageTextView.text = ""
+        messageTextView.text = null
         loadBestTime()
 
         for (row in 0 until 9) {
@@ -216,7 +224,7 @@ class MainActivity : AppCompatActivity() {
                     cell?.isEnabled = false
                     cell?.setTextColor(Color.LTGRAY) // Lighter color for pre-filled numbers
                 } else {
-                    cell?.setText("")
+                    cell?.text?.clear()
                     cell?.isEnabled = true
                 }
             }
@@ -243,29 +251,28 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     editText.setTextColor(Color.RED)
                 }
-                 messageTextView.text = ""
+                messageTextView.text = null
             }
         })
     }
-    
+
     private fun loadBestTime() {
-        val sharedPref = getSharedPreferences("SudokuPrefs", Context.MODE_PRIVATE)
-        val bestTime = sharedPref.getLong("bestTime_$difficulty", -1)
+        val sharedPref = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val bestTime = sharedPref.getLong("$PREFS_KEY_BEST_TIME_PREFIX$difficulty", -1)
         if (bestTime != -1L) {
-            bestTimeTextView.text = "Best: ${formatTime(bestTime)}"
+            bestTimeTextView.text = getString(R.string.best_time, formatTime(bestTime))
         } else {
-            bestTimeTextView.text = "Best: --:--"
+            bestTimeTextView.text = getString(R.string.best_time_default)
         }
     }
 
     private fun updateBestTime(newTime: Long) {
-        val sharedPref = getSharedPreferences("SudokuPrefs", Context.MODE_PRIVATE)
-        val bestTime = sharedPref.getLong("bestTime_$difficulty", -1)
+        val sharedPref = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val bestTime = sharedPref.getLong("$PREFS_KEY_BEST_TIME_PREFIX$difficulty", -1)
 
         if (bestTime == -1L || newTime < bestTime) {
-            with(sharedPref.edit()) {
-                putLong("bestTime_$difficulty", newTime)
-                apply()
+            sharedPref.edit {
+                putLong("$PREFS_KEY_BEST_TIME_PREFIX$difficulty", newTime)
             }
             loadBestTime()
         }
@@ -274,6 +281,6 @@ class MainActivity : AppCompatActivity() {
     private fun formatTime(timeInSeconds: Long): String {
         val minutes = timeInSeconds / 60
         val seconds = timeInSeconds % 60
-        return String.format("%02d:%02d", minutes, seconds)
+        return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
     }
 }
