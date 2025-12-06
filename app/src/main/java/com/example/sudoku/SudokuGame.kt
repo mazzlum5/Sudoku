@@ -11,6 +11,25 @@ class SudokuGame {
         return board
     }
 
+    fun getHint(): Triple<Int, Int, Int>? {
+        val emptyCells = mutableListOf<Pair<Int, Int>>()
+        for (r in 0..8) {
+            for (c in 0..8) {
+                if (board[r][c] == 0) {
+                    emptyCells.add(Pair(r, c))
+                }
+            }
+        }
+
+        if (emptyCells.isNotEmpty()) {
+            val (row, col) = emptyCells.random()
+            val hint = solution[row][col]
+            return Triple(row, col, hint)
+        }
+
+        return null
+    }
+
     fun generateNewGame(difficulty: String) {
         // Start with an empty board
         board = Array(9) { IntArray(9) }
