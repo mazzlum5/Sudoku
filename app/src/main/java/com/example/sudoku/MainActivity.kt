@@ -8,17 +8,27 @@ import android.text.Editable
 import android.text.InputFilter
 import android.text.InputType
 import android.text.TextWatcher
+import android.util.Log
 import android.view.Gravity
 import android.widget.Button
 import android.widget.Chronometer
 import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.FullScreenContentCallback
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.OnUserEarnedRewardListener
+import com.google.android.gms.ads.rewarded.RewardedAd
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,12 +36,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sudokuGrid: GridLayout
     private lateinit var cells: Array<Array<EditText?>>
     private lateinit var newGameButton: Button
+    private lateinit var hintButton: Button
     private lateinit var checkSolutionButton: Button
     private lateinit var messageTextView: TextView
     private lateinit var bestTimeTextView: TextView
     private lateinit var timer: Chronometer
     private var timerShouldStart = false
     private lateinit var difficulty: String
+    private var rewardedAd: RewardedAd? = null
+    private val adUnitId = "ca-app-pub-3940256099942544/5224354917" // Test Ad ID
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,8 +56,12 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        MobileAds.initialize(this) {}
+        loadRewardedAd()
+
         sudokuGrid = findViewById(R.id.sudokuGrid)
         newGameButton = findViewById(R.id.newGameButton)
+        hintButton = findViewById(R.id.hintButton)
         checkSolutionButton = findViewById(R.id.checkSolutionButton)
         messageTextView = findViewById(R.id.messageTextView)
         bestTimeTextView = findViewById(R.id.bestTimeTextView)
@@ -58,6 +75,10 @@ class MainActivity : AppCompatActivity() {
 
         newGameButton.setOnClickListener {
             finish() // Go back to the StartMenuActivity
+        }
+
+        hintButton.setOnClickListener {
+            showRewardedAd()
         }
 
         checkSolutionButton.setOnClickListener {
@@ -74,6 +95,56 @@ class MainActivity : AppCompatActivity() {
                 messageTextView.text = "Keep trying!"
                 messageTextView.setTextColor(Color.RED)
             }
+        }
+    }
+
+    private fun loadRewardedAd() {
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(this, adUnitId, adRequest, object : RewardedAdLoadCallback() {
+            override fun onAdFailedToLoad(adError: LoadAdError) {
+                Log.d("MainActivity", adError.message)
+                rewardedAd = null
+            }
+
+            override fun onAdLoaded(ad: RewardedAd) {
+                Log.d("MainActivity", "Ad was loaded.")
+                rewardedAd = ad
+            }
+        })
+    }
+
+    private fun showRewardedAd() {
+        if (rewardedAd != null) {
+            rewardedAd?.fullScreenContentCallback = object: FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    Log.d("MainActivity", "Ad was dismissed.")
+                    // Load the next ad
+                    loadRewardedAd()
+                }
+
+                override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+                    Log.d("MainActivity", "Ad failed to show.")
+                }
+
+                override fun onAdShowedFullScreenContent() {
+                    Log.d("MainActivity", "Ad showed fullscreen content.")
+                    // Called when ad is dismissed.
+                    rewardedAd = null
+                }
+            }
+
+            rewardedAd?.show(this, OnUserEarnedRewardListener {
+                Log.d("MainActivity", "User earned the reward.")
+                val hint = sudokuGame.getHint()
+                if (hint != null) {
+                    val (row, col, number) = hint
+                    val cell = cells[row][col]
+                    cell?.setText(number.toString())
+                }
+            })
+        } else {
+            Log.d("MainActivity", "The rewarded ad wasn't ready yet.")
+            Toast.makeText(this, "Ledtråd inte tillgänglig för tillfället. Försök igen om en stund.", Toast.LENGTH_SHORT).show()
         }
     }
 
