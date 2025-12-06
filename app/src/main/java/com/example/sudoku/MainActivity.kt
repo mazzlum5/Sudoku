@@ -2,12 +2,14 @@ package com.example.sudoku
 
 import android.graphics.Color
 import android.os.Bundle
+import android.os.SystemClock
 import android.text.Editable
 import android.text.InputFilter
 import android.text.InputType
 import android.text.TextWatcher
 import android.view.Gravity
 import android.widget.Button
+import android.widget.Chronometer
 import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.TextView
@@ -25,6 +27,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var newGameButton: Button
     private lateinit var checkSolutionButton: Button
     private lateinit var messageTextView: TextView
+    private lateinit var timer: Chronometer
+    private var timerShouldStart = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +44,7 @@ class MainActivity : AppCompatActivity() {
         newGameButton = findViewById(R.id.newGameButton)
         checkSolutionButton = findViewById(R.id.checkSolutionButton)
         messageTextView = findViewById(R.id.messageTextView)
+        timer = findViewById(R.id.timer)
 
         val difficulty = intent.getStringExtra("DIFFICULTY") ?: "Medium"
 
@@ -53,12 +58,21 @@ class MainActivity : AppCompatActivity() {
 
         checkSolutionButton.setOnClickListener {
             if (sudokuGame.checkSolution()) {
-                messageTextView.text = "Congratulations! You solved it!"
+                timer.stop()
+                messageTextView.text = "Congratulations! You solved it in ${timer.text}"
                 messageTextView.setTextColor(Color.GREEN)
             } else {
                 messageTextView.text = "Keep trying!"
                 messageTextView.setTextColor(Color.RED)
             }
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && timerShouldStart) {
+            timer.start()
+            timerShouldStart = false
         }
     }
 
@@ -92,11 +106,12 @@ class MainActivity : AppCompatActivity() {
                 editText.inputType = InputType.TYPE_CLASS_NUMBER
                 editText.filters = arrayOf(InputFilter.LengthFilter(1))
                 editText.gravity = Gravity.CENTER
+                editText.setTextColor(Color.WHITE)
 
                 if ((row / 3 + col / 3) % 2 == 0) {
-                    editText.setBackgroundColor(Color.parseColor("#E8E8E8"))
+                    editText.setBackgroundColor(Color.parseColor("#333333"))
                 } else {
-                    editText.setBackgroundColor(Color.WHITE)
+                    editText.setBackgroundColor(Color.parseColor("#222222"))
                 }
 
                 sudokuGrid.addView(editText)
@@ -118,13 +133,16 @@ class MainActivity : AppCompatActivity() {
                 if (number != 0) {
                     cell?.setText(number.toString())
                     cell?.isEnabled = false
-                    cell?.setTextColor(Color.BLACK)
+                    cell?.setTextColor(Color.LTGRAY) // Lighter color for pre-filled numbers
                 } else {
                     cell?.setText("")
                     cell?.isEnabled = true
                 }
             }
         }
+
+        timer.base = SystemClock.elapsedRealtime()
+        timerShouldStart = true
     }
 
     private fun addTextWatcher(editText: EditText, row: Int, col: Int) {
@@ -140,7 +158,7 @@ class MainActivity : AppCompatActivity() {
                 currentBoard[row][col] = number
 
                 if (sudokuGame.isMoveValid(currentBoard, row, col, number)) {
-                    editText.setTextColor(Color.BLUE)
+                    editText.setTextColor(Color.CYAN)
                 } else {
                     editText.setTextColor(Color.RED)
                 }
